@@ -129,15 +129,15 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--ink); outli
 .grid { position: relative; width: 100%; height: 100%; display: grid; gap: var(--gap); }
 .tile {
   position: relative; display: grid; place-items: center; background: var(--tile); border-radius: 16%;
-  box-shadow: inset 0 -6px 0 var(--tile-edge); font-family: var(--f-display); color: var(--ink);
+  box-shadow: inset 0 calc(-1 * var(--depth, 6px)) 0 var(--tile-edge); font-family: var(--f-display); color: var(--ink);
   font-size: calc((var(--board) - 20px) / var(--n) * .5); line-height: 1; text-transform: uppercase;
   transition: transform .12s cubic-bezier(.3,1.6,.5,1), background .1s ease, box-shadow .1s ease; z-index: 1;
 }
 .tile small { font-size: .55em; text-transform: lowercase; margin-left: .02em; }
-.tile.sel { background: var(--sun); box-shadow: inset 0 -6px 0 var(--sun-edge); transform: scale(1.06); }
-.tile.ok { background: var(--leaf); color: #fff; box-shadow: inset 0 -6px 0 var(--leaf-edge); }
+.tile.sel { background: var(--sun); box-shadow: inset 0 calc(-1 * var(--depth, 6px)) 0 var(--sun-edge); transform: scale(1.06); }
+.tile.ok { background: var(--leaf); color: #fff; box-shadow: inset 0 calc(-1 * var(--depth, 6px)) 0 var(--leaf-edge); }
 .tile.dupe { background: var(--sun); }
-.tile.no { background: var(--berry); color: #fff; box-shadow: inset 0 -6px 0 var(--berry-edge); }
+.tile.no { background: var(--berry); color: #fff; box-shadow: inset 0 calc(-1 * var(--depth, 6px)) 0 var(--berry-edge); }
 .tile.burst { animation: burst .42s cubic-bezier(.3,1.6,.5,1); }
 @keyframes burst { 40% { transform: scale(1.16) rotate(-4deg); } 100% { transform: scale(1); } }
 .trail { position: absolute; inset: 10px; pointer-events: none; z-index: 2; overflow: visible; }
@@ -347,7 +347,7 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--ink); outli
 <div class="sheet-back" id="settings" hidden>
   <div class="sheet" role="dialog" aria-label="Settings">
     <h3>Settings</h3>
-    <div class="set"><label>Board size</label><div class="seg" data-key="size"><button data-v="4">4×4</button><button data-v="5">5×5</button></div></div>
+    <div class="set"><label>Board size</label><div class="seg" data-key="size"><button data-v="4">4×4</button><button data-v="5">5×5</button><button data-v="6">6×6</button></div></div>
     <div class="set"><label>Classic round</label><div class="seg" data-key="time"><button data-v="60">1:00</button><button data-v="120">2:00</button><button data-v="180">3:00</button></div></div>
     <div class="set"><label>Shortest word</label><div class="seg" data-key="minLen"><button data-v="3">3</button><button data-v="4">4</button></div></div>
     <div class="set"><label>Show valid words while swiping<span>Bubble turns green on a real word</span></label><button class="toggle" data-key="preview" aria-label="Show valid words while swiping"></button></div>
@@ -445,7 +445,7 @@ var WF = (function () {
   // Letter bag with natural English proportions (98 letters).
   var BAG = "eeeeeeeeeeeeaaaaaaaaaiiiiiiiiioooooooonnnnnnrrrrrrttttttllllssssuuuuddddgggbbccmmppffhhvvwwyykjxqz";
   var RARE = "jkqxz", VOWELS = "aeiou";
-  var LIMITS = { 4: { v: [5, 7], min: 45 }, 5: { v: [8, 11], min: 110 } };
+  var LIMITS = { 4: { v: [5, 7], min: 45, rare: 2 }, 5: { v: [8, 11], min: 110, rare: 2 }, 6: { v: [12, 16], min: 220, rare: 3 } };
   function drawBoard(rand, size) {
     var bag = BAG.split(""), tiles = [];
     for (var i = 0; i < size * size; i++) {
@@ -462,7 +462,7 @@ var WF = (function () {
       if (RARE.indexOf(tiles[i][0]) >= 0) rare++;
     }
     var L = LIMITS[size];
-    return v >= L.v[0] && v <= L.v[1] && rare <= 2;
+    return v >= L.v[0] && v <= L.v[1] && rare <= L.rare;
   }
   // Keeps drawing until the board is lively enough; returns the best one found.
   function makeBoard(trie, size, minLen, seed) {
@@ -584,7 +584,8 @@ var PACKED_WORDS = "0aahCrdvark8sBbackEusGes3ft3lone7sDndonHedHingHmentHs3se5d5m
     gridEl.style.gridTemplateColumns = "repeat(" + size + ", 1fr)";
     gridEl.style.setProperty("--n", size);
     gridEl.parentElement.style.setProperty("--n", size);
-    gridEl.style.setProperty("--gap", size === 5 ? "7px" : "9px");
+    gridEl.style.setProperty("--gap", size === 6 ? "5px" : size === 5 ? "7px" : "9px");
+    gridEl.style.setProperty("--depth", size === 6 ? "4px" : size === 5 ? "5px" : "6px");
     gridEl.innerHTML = tiles.map(function (t, i) { return '<div class="tile" data-i="' + i + '">' + tileHTML(t) + "</div>"; }).join("");
   }
 
@@ -609,7 +610,7 @@ var PACKED_WORDS = "0aahCrdvark8sBbackEusGes3ft3lone7sDndonHedHingHmentHs3se5d5m
     };
     var seed = daily ? WF.hash("wordfinch-" + todayKey()) : (Math.random() * 4294967296) >>> 0;
     show("game");
-    document.documentElement.style.setProperty("--board", "min(calc(100vw - 32px), " + (G.size === 5 ? "56dvh" : "54dvh") + ", 470px)");
+    document.documentElement.style.setProperty("--board", "min(calc(100vw - 32px), " + (G.size === 6 ? "60dvh" : G.size === 5 ? "56dvh" : "54dvh") + ", 470px)");
     newBoard(seed);
     $("score").textContent = "0";
     $("bubble").textContent = ""; $("bubble").className = "bubble";
@@ -1011,7 +1012,7 @@ var PACKED_WORDS = "0aahCrdvark8sBbackEusGes3ft3lone7sDndonHedHingHmentHs3se5d5m
       var missedCommon = missed.filter(function (w) { return WF.isCommon(TRIE, w); });
       var ext = extensions(bd, missed);
       L.push("");
-      L.push(R.boards.length > 1 ? "BOARD " + (bi + 1) + " (from " + clock(bd.from) + "), found " + bd.found.size + " of " + bd.all.size + ":" : "BOARD (as it started):");
+      L.push(R.boards.length > 1 ? "BOARD " + (bi + 1) + " (from " + clock(bd.from) + "), found " + bd.found.size + " of " + bd.all.size + ":" : "BOARD:");
       L.push(boardRows(bd.tiles, R.size));
       L.push("Missed everyday words (" + missedCommon.length + "):");
       L.push(missedCommon.length ? groupedLine(missedCommon) : "  none");

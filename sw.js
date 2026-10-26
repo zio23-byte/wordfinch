@@ -1,5 +1,5 @@
 // Caches the whole game so it opens with no connection.
-const CACHE = "wordfinch-1792942620932";
+const CACHE = "wordfinch-1793026035406";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => {
